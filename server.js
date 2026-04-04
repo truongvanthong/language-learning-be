@@ -14,34 +14,11 @@ const MONGODB_DB = process.env.MONGODB_DB || "web_korean";
 const ITEMS_COLLECTION = "items";
 
 const app = express();
-const corsOrigins = (process.env.CORS_ORIGINS || "http://127.0.0.1:5173,http://localhost:5173")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-const allowAllOrigins = corsOrigins.includes("*");
-const localDevOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
-
-function resolveAllowedOrigin(origin) {
-  if (!origin) {
-    return null;
-  }
-  if (allowAllOrigins) {
-    return origin;
-  }
-  if (corsOrigins.includes(origin)) {
-    return origin;
-  }
-  if (localDevOriginPattern.test(origin)) {
-    return origin;
-  }
-  return null;
-}
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowed = resolveAllowedOrigin(origin);
-  if (allowed) {
-    res.setHeader("Access-Control-Allow-Origin", allowed);
+  res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  if (origin) {
     res.setHeader("Vary", "Origin");
   }
   if (req.method === "OPTIONS") {
