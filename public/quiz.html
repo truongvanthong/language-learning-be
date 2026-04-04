@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kiểm tra — Ôn từ Hàn – Việt</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="wrap quiz-page">
+    <p class="quiz-nav"><button type="button" id="btn-back" class="secondary linkish">← Về trang chủ</button></p>
+    <h1>Kiểm tra</h1>
+
+    <section class="card quiz-card" aria-live="polite">
+      <p class="prompt" id="prompt-text">Đang tải…</p>
+      <input type="text" id="answer-input" autocomplete="off" spellcheck="false" placeholder="Nhập đáp án…" disabled />
+      <div class="actions" id="quiz-actions">
+        <button type="button" id="btn-check">Kiểm tra</button>
+      </div>
+      <button type="button" id="btn-finish" class="finish-btn" hidden>Kết thúc</button>
+      <p class="meta" id="quiz-meta"></p>
+    </section>
+  </main>
+
+  <div id="wrong-popup-overlay" class="wrong-popup-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="wrong-popup-title">
+    <div class="wrong-popup-box">
+      <p id="wrong-popup-title" class="wrong-popup-title">Sai</p>
+      <p id="wrong-popup-text" class="wrong-popup-text"></p>
+      <!-- <button type="button" id="wrong-popup-close" class="wrong-popup-close">Đóng</button> -->
+    </div>
+  </div>
+  <script src="quiz.js"></script>
+</body>
+</html>

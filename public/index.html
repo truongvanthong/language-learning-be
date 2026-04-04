@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ôn từ Hàn – Việt</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Ôn từ Hàn – Việt</h1>
+
+    <section class="card" aria-labelledby="import-title">
+      <h2 id="import-title">Nhập Excel</h2>
+      <p class="hint">3 cột: tiếng Hàn | tiếng Việt | chủ đề. Số lần sai không nhập từ file — chỉ tự tăng khi bạn trả lời sai khi ôn.</p>
+      <form id="import-form" class="row">
+        <input type="file" id="import-file" accept=".xlsx,.xls" />
+        <button type="submit">Tải lên</button>
+      </form>
+      <p id="import-msg" class="msg" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="manual-title">
+      <h2 id="manual-title">Nhập tay</h2>
+      <p class="hint">Thêm một từ vào CSDL. Số lần sai luôn bắt đầu từ 0.</p>
+      <form id="manual-form" class="form-manual">
+        <label class="field">
+          <span>Tiếng Hàn</span>
+          <input type="text" id="manual-korean" name="korean" required autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="field">
+          <span>Tiếng Việt</span>
+          <input type="text" id="manual-vietnamese" name="vietnamese" required autocomplete="off" spellcheck="false" />
+        </label>
+        <label class="field">
+          <span>Chủ đề</span>
+          <input type="text" id="manual-topic" name="topic" required autocomplete="off" spellcheck="false" />
+        </label>
+        <button type="submit">Thêm từ</button>
+      </form>
+      <p id="manual-msg" class="msg" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="setup-title">
+      <h2 id="setup-title">Chọn chủ đề &amp; chế độ</h2>
+      <div id="topics-box" class="topics"></div>
+      <label class="check-all"><input type="checkbox" id="topic-all" checked /> Tất cả chủ đề</label>
+
+      <fieldset class="mode">
+        <legend>Hiển thị câu hỏi</legend>
+        <label><input type="radio" name="mode" value="showVietnamese" checked /> Hiện tiếng Việt → gõ tiếng Hàn</label>
+        <label><input type="radio" name="mode" value="showKorean" /> Hiện tiếng Hàn → gõ tiếng Việt</label>
+      </fieldset>
+
+      <button type="button" id="btn-start">Bắt đầu kiểm tra</button>
+      <p id="setup-msg" class="msg" role="status"></p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

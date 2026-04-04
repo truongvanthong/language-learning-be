@@ -1,0 +1,18 @@
+{
+  "name": "web-korean-vocab-be",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API MongoDB + phục vụ static build React",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.0",
+    "express": "^4.21.2",
+    "mongodb": "^6.12.0",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
+  }
+}
