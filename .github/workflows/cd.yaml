@@ -1,0 +1,13 @@
+name: Build and Push Docker Images
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    misa-be:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Redeploy
+              run: curl -X GET "${{ secrets.DEPLOY_HOOK }}"
