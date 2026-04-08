@@ -9,7 +9,6 @@ require("dotenv").config();
 
 const PORT = Number(process.env.PORT) || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
-console.log('MONGODB_URI', MONGODB_URI)
 const MONGODB_DB = process.env.MONGODB_DB || "web_korean";
 const ITEMS_COLLECTION = "items";
 
@@ -108,6 +107,14 @@ function sendSpaIndex(res) {
 }
 
 function mountApiRoutes(items) {
+  app.get("/api/health", async (_req, res) => {
+    try {
+      await items.estimatedDocumentCount();
+      res.json({ status: "ok", service: "web-korean-be" });
+    } catch (err) {
+      res.status(503).json({ status: "error", error: String(err.message || err) });
+    }
+  });
   app.get("/api/topics", async (_req, res) => {
     try {
       const topics = await items.distinct("topic");
@@ -156,6 +163,19 @@ function mountApiRoutes(items) {
       const result = await items.insertOne(doc);
       const row = toItem({ ...doc, _id: result.insertedId });
       res.status(201).json({ item: row });
+    } catch (err) {
+      res.status(500).json({ error: String(err.message || err) });
+    }
+  });
+  app.post("/api/topics/reset-wrong", async (req, res) => {
+    const topic = String(req.body?.topic ?? "").trim();
+    if (!topic) {
+      res.status(400).json({ error: "Thiếu topic" });
+      return;
+    }
+    try {
+      const result = await items.updateMany({ topic }, { $set: { wrong_count: 0 } });
+      res.json({ topic, updated: Number(result.modifiedCount) || 0 });
     } catch (err) {
       res.status(500).json({ error: String(err.message || err) });
     }
