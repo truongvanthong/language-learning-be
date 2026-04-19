@@ -26,7 +26,7 @@ app.use((req, res, next) => {
       "Access-Control-Allow-Headers",
       requestedHeaders || "Content-Type, Accept, Origin, X-Requested-With"
     );
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
     res.setHeader("Access-Control-Max-Age", "86400");
     return res.sendStatus(204);
   }
@@ -106,6 +106,24 @@ function sendSpaIndex(res) {
   res.sendFile(DIST_INDEX);
 }
 
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function requireAdmin(req, res, next) {
+  const expected = process.env.ADMIN_API_KEY;
+  if (!expected) {
+    next();
+    return;
+  }
+  const provided = String(req.headers["x-admin-key"] ?? "").trim();
+  if (provided === expected) {
+    next();
+    return;
+  }
+  res.status(401).json({ error: "Thiếu hoặc sai X-Admin-Key (đặt ADMIN_API_KEY trên server)." });
+}
+
 function mountApiRoutes(items) {
   app.get("/api/health", async (_req, res) => {
     try {
@@ -167,6 +185,136 @@ function mountApiRoutes(items) {
       res.status(500).json({ error: String(err.message || err) });
     }
   });
+  app.get("/api/admin/items", requireAdmin, async (req, res) => {
+    try {
+      const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
+      const limitRaw = Number.parseInt(String(req.query.limit ?? "50"), 10);
+      const limit = Math.min(200, Math.max(5, Number.isFinite(limitRaw) ? limitRaw : 50));
+      const skip = (page - 1) * limit;
+      const filter = {};
+      const topic = String(req.query.topic ?? "").trim();
+      if (topic) {
+        filter.topic = topic;
+      }
+      const q = String(req.query.q ?? "").trim();
+      if (q) {
+        const rx = new RegExp(escapeRegex(q), "i");
+        filter.$or = [{ korean: rx }, { vietnamese: rx }];
+      }
+      const [docs, total] = await Promise.all([
+        items.find(filter).sort({ topic: 1, korean: 1 }).skip(skip).limit(limit).toArray(),
+        items.countDocuments(filter),
+      ]);
+      res.json({
+        items: docs.map((d) => toItem(d)),
+        total,
+        page,
+        limit,
+      });
+    } catch (err) {
+      res.status(500).json({ error: String(err.message || err) });
+    }
+  });
+
+  app.get("/api/admin/items/:id", requireAdmin, async (req, res) => {
+    const objectId = parseItemObjectId(req.params.id);
+    if (!objectId) {
+      res.status(400).json({ error: "id không hợp lệ" });
+      return;
+    }
+    try {
+      const doc = await items.findOne({ _id: objectId });
+      if (!doc) {
+        res.status(404).json({ error: "Không tìm thấy" });
+        return;
+      }
+      res.json({ item: toItem(doc) });
+    } catch (err) {
+      res.status(500).json({ error: String(err.message || err) });
+    }
+  });
+
+  app.patch("/api/admin/items/:id", requireAdmin, async (req, res) => {
+    const objectId = parseItemObjectId(req.params.id);
+    if (!objectId) {
+      res.status(400).json({ error: "id không hợp lệ" });
+      return;
+    }
+    const korean = req.body?.korean !== undefined ? String(req.body.korean).trim() : undefined;
+    const vietnamese = req.body?.vietnamese !== undefined ? String(req.body.vietnamese).trim() : undefined;
+    const topic = req.body?.topic !== undefined ? String(req.body.topic).trim() : undefined;
+    let wrongCount;
+    if (req.body?.wrongCount !== undefined) {
+      const w = Number(req.body.wrongCount);
+      if (!Number.isFinite(w) || w < 0 || w > 999999) {
+        res.status(400).json({ error: "wrongCount không hợp lệ" });
+        return;
+      }
+      wrongCount = Math.floor(w);
+    }
+    const $set = {};
+    if (korean !== undefined) {
+      if (!korean) {
+        res.status(400).json({ error: "korean không được rỗng" });
+        return;
+      }
+      $set.korean = korean;
+    }
+    if (vietnamese !== undefined) {
+      if (!vietnamese) {
+        res.status(400).json({ error: "vietnamese không được rỗng" });
+        return;
+      }
+      $set.vietnamese = vietnamese;
+    }
+    if (topic !== undefined) {
+      if (!topic) {
+        res.status(400).json({ error: "topic không được rỗng" });
+        return;
+      }
+      $set.topic = topic;
+    }
+    if (wrongCount !== undefined) {
+      $set.wrong_count = wrongCount;
+    }
+    if (Object.keys($set).length === 0) {
+      res.status(400).json({ error: "Không có trường để cập nhật" });
+      return;
+    }
+    try {
+      const updated = await items.findOneAndUpdate(
+        { _id: objectId },
+        { $set },
+        { returnDocument: "after" }
+      );
+      if (!updated) {
+        res.status(404).json({ error: "Không tìm thấy item" });
+        return;
+      }
+      res.json({ item: toItem(updated) });
+    } catch (err) {
+      res.status(500).json({ error: String(err.message || err) });
+    }
+  });
+
+  app.delete("/api/admin/items/:id", requireAdmin, async (req, res) => {
+    const objectId = parseItemObjectId(req.params.id);
+    if (!objectId) {
+      res.status(400).json({ error: "id không hợp lệ" });
+      return;
+    }
+    try {
+      const result = await items.deleteOne({ _id: objectId });
+      if (result.deletedCount === 0) {
+        res.status(404).json({ error: "Không tìm thấy item" });
+        return;
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err.message || err) });
+    }
+  });
+
   app.post("/api/topics/reset-wrong", async (req, res) => {
     const topic = String(req.body?.topic ?? "").trim();
     if (!topic) {
